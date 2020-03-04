@@ -1,6 +1,6 @@
-import React from 'react';
-import { Audio } from 'expo-av';
-import { Button, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
+import React from 'react'
+import { Audio } from 'expo-av'
+import { Button, StyleSheet, Text, TouchableHighlight, View } from 'react-native'
 
 import './assets/style.css'
 
@@ -12,7 +12,7 @@ let sentances = [
   "Do you read me over?",
   "Allmänt anrop",
   "Hur är vädret där uppe?",
-];
+]
 
 interface AppState {
   gridLetters: string[],
@@ -25,41 +25,41 @@ interface AppState {
 export default class App extends React.Component<{}, AppState> {
 
   constructor(props){
-    super(props);
+    super(props)
     this.state={
       gridLetters:["D", "e", "m", "o"],
       currentSentance:"Demo",
       currentClickIndex: 0,
       points: 0,
       gameOver: false
-    };
+    }
   }
 
   async componentDidMount() {
 
-    let lettersNumbers = ['Å','Ä','Ö','+','=','|'];
+    let lettersNumbers = ['Å','Ä','Ö','+','=','|']
 
     for (let i = 0; i < 9; i++) {
-        lettersNumbers.push(i.toString());
+        lettersNumbers.push(i.toString())
     }
     for (let i = 0; i < 26; i++) {
-        lettersNumbers.push((i+10).toString(36).toUpperCase());
+        lettersNumbers.push((i+10).toString(36).toUpperCase())
     }
 
     try {
       lettersNumbers.forEach(async letter => {
-        let clip = new Audio.Sound();
-        clip.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate);
+        let clip = new Audio.Sound()
+        clip.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
         await clip.loadAsync(
           require('./assets/audio/'+letter+'_morse_code.ogg')
-        );
+        )
         soundClips[letter] = clip
       })
     } catch(error) {
-      console.error(error);
+      console.error(error)
     }
 
-    let randomIndex = Math.round(Math.random() * (sentances.length - 1));
+    let randomIndex = Math.round(Math.random() * (sentances.length - 1))
     this.createGridLetters(sentances[randomIndex])
   }
 
@@ -71,29 +71,29 @@ export default class App extends React.Component<{}, AppState> {
         }, wordPauseMs)
       }
     }
-  };
+  }
 
   createGridLetters(newSentance) {
-    let randomLetters = [];
+    let randomLetters = []
     for (let i = 0; i < newSentance.length; i++) {
         if (randomLetters.indexOf(newSentance[i].toLowerCase()) == -1) {
-            randomLetters.push(newSentance[i]);
+            randomLetters.push(newSentance[i])
         }
     }
 
-    let currentRandomizerIndex = randomLetters.length, tmp;
+    let currentRandomizerIndex = randomLetters.length, tmp
     while (0 !== currentRandomizerIndex) {
-        let randomIndex = Math.floor(Math.random() * currentRandomizerIndex);
-        currentRandomizerIndex -= 1;
+        let randomIndex = Math.floor(Math.random() * currentRandomizerIndex)
+        currentRandomizerIndex -= 1
 
-        tmp = randomLetters[currentRandomizerIndex];
-        randomLetters[currentRandomizerIndex] = randomLetters[randomIndex];
-        randomLetters[randomIndex] = tmp;
+        tmp = randomLetters[currentRandomizerIndex]
+        randomLetters[currentRandomizerIndex] = randomLetters[randomIndex]
+        randomLetters[randomIndex] = tmp
     }
 
     let tmpArr = []
     for (let i = 0; i < randomLetters.length; i++) {
-        tmpArr.push(randomLetters[i].toLowerCase());
+        tmpArr.push(randomLetters[i].toLowerCase())
     }
 
     this.setState({
@@ -107,7 +107,7 @@ export default class App extends React.Component<{}, AppState> {
 
   playNextLetter() {
     if (this.state.gameOver) {
-      let randomIndex = Math.round(Math.random() * (sentances.length - 1));
+      let randomIndex = Math.round(Math.random() * (sentances.length - 1))
       this.createGridLetters(sentances[randomIndex])
     } else {
       // Go to next letter
@@ -121,7 +121,7 @@ export default class App extends React.Component<{}, AppState> {
           } else {
               let currentLetter = this.state.currentSentance[currentIndex].replace('.', '|').replace('?', '+').replace('!', '=').toUpperCase()
 
-              soundClips[currentLetter].playAsync();
+              soundClips[currentLetter].playAsync()
           }
       }
     }
@@ -130,10 +130,10 @@ export default class App extends React.Component<{}, AppState> {
   addPoint(letterIndex) {
     if (!this.state.gameOver) {
       if (this.state.currentSentance[this.state.currentClickIndex] == this.state.gridLetters[letterIndex]) {
-        console.log('CORRECT!!');
+        console.log('CORRECT!!')
         this.setState({ points: this.state.points + 1 })
       } else if (this.state.points > 0) {
-        console.log('WRONG');
+        console.log('WRONG')
         this.setState({ points: this.state.points - 1 })
       }
       this.setState({ currentClickIndex: this.state.currentClickIndex + 1 })
@@ -147,7 +147,7 @@ export default class App extends React.Component<{}, AppState> {
   }
 
   render() {
-    let views = [];
+    let views = []
     for (var i = 0; i < this.state.gridLetters.length; i++) {
 
       views.push(
@@ -158,7 +158,7 @@ export default class App extends React.Component<{}, AppState> {
             </Text>
           </View>
         </TouchableHighlight>
-      );
+      )
     }
 
     return (
@@ -226,4 +226,4 @@ const styles = StyleSheet.create({
     backgroundColor: 'green',
     padding: '40px'
   }
-});
+})
