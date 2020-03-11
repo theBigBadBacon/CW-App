@@ -2,17 +2,59 @@ import React from 'react'
 import { Audio } from 'expo-av'
 import { Button, StyleSheet, Text, TouchableHighlight, View } from 'react-native'
 
-import './assets/style.css'
-
 // Global stuff
 let wordPauseMs     = 500 // Morse code 1 time unit (period)
 let currentIndex    = 0
-let soundClips      = {}
 let sentances = [
   "Do you read me over?",
   "Allmänt anrop",
   "Hur är vädret där uppe?",
 ]
+
+const soundClips = {
+	'A': require('./assets/audio/A_morse_code.mp3'),
+	'B': require('./assets/audio/B_morse_code.mp3'),
+	'C': require('./assets/audio/C_morse_code.mp3'),
+	'D': require('./assets/audio/D_morse_code.mp3'),
+	'E': require('./assets/audio/E_morse_code.mp3'),
+	'F': require('./assets/audio/F_morse_code.mp3'),
+	'G': require('./assets/audio/G_morse_code.mp3'),
+	'H': require('./assets/audio/H_morse_code.mp3'),
+	'I': require('./assets/audio/I_morse_code.mp3'),
+	'J': require('./assets/audio/J_morse_code.mp3'),
+	'K': require('./assets/audio/K_morse_code.mp3'),
+	'L': require('./assets/audio/L_morse_code.mp3'),
+	'M': require('./assets/audio/M_morse_code.mp3'),
+	'N': require('./assets/audio/N_morse_code.mp3'),
+	'O': require('./assets/audio/O_morse_code.mp3'),
+	'P': require('./assets/audio/P_morse_code.mp3'),
+	'Q': require('./assets/audio/Q_morse_code.mp3'),
+	'R': require('./assets/audio/R_morse_code.mp3'),
+	'S': require('./assets/audio/S_morse_code.mp3'),
+	'T': require('./assets/audio/T_morse_code.mp3'),
+	'U': require('./assets/audio/U_morse_code.mp3'),
+	'V': require('./assets/audio/V_morse_code.mp3'),
+	'W': require('./assets/audio/W_morse_code.mp3'),
+	'X': require('./assets/audio/X_morse_code.mp3'),
+	'Y': require('./assets/audio/Y_morse_code.mp3'),
+	'Z': require('./assets/audio/Z_morse_code.mp3'),
+	'AA': require('./assets/audio/AA_morse_code.mp3'),
+	'AE': require('./assets/audio/AE_morse_code.mp3'),
+	'OE': require('./assets/audio/OE_morse_code.mp3'),
+	'0': require('./assets/audio/0_morse_code.mp3'),
+	'1': require('./assets/audio/1_morse_code.mp3'),
+	'2': require('./assets/audio/2_morse_code.mp3'),
+	'3': require('./assets/audio/3_morse_code.mp3'),
+	'4': require('./assets/audio/4_morse_code.mp3'),
+	'5': require('./assets/audio/5_morse_code.mp3'),
+	'6': require('./assets/audio/6_morse_code.mp3'),
+	'7': require('./assets/audio/7_morse_code.mp3'),
+	'8': require('./assets/audio/8_morse_code.mp3'),
+	'9': require('./assets/audio/9_morse_code.mp3'),
+	'EM': require('./assets/audio/EM_morse_code.mp3'),
+	'QM': require('./assets/audio/QM_morse_code.mp3'),
+	'DO': require('./assets/audio/DO_morse_code.mp3')
+}
 
 interface AppState {
   gridLetters: string[],
@@ -36,28 +78,6 @@ export default class App extends React.Component<{}, AppState> {
   }
 
   async componentDidMount() {
-
-    let lettersNumbers = ['Å','Ä','Ö','+','=','|']
-
-    for (let i = 0; i < 9; i++) {
-        lettersNumbers.push(i.toString())
-    }
-    for (let i = 0; i < 26; i++) {
-        lettersNumbers.push((i+10).toString(36).toUpperCase())
-    }
-
-    try {
-      lettersNumbers.forEach(async letter => {
-        let clip = new Audio.Sound()
-        clip.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
-        await clip.loadAsync(
-          require('./assets/audio/'+letter+'_morse_code.ogg')
-        )
-        soundClips[letter] = clip
-      })
-    } catch(error) {
-      console.error(error)
-    }
 
     let randomIndex = Math.round(Math.random() * (sentances.length - 1))
     this.createGridLetters(sentances[randomIndex])
@@ -105,7 +125,7 @@ export default class App extends React.Component<{}, AppState> {
     })
   }
 
-  playNextLetter() {
+  async playNextLetter() {
     if (this.state.gameOver) {
       let randomIndex = Math.round(Math.random() * (sentances.length - 1))
       this.createGridLetters(sentances[randomIndex])
@@ -119,9 +139,24 @@ export default class App extends React.Component<{}, AppState> {
                 this.playNextLetter()
               }, wordPauseMs * 3)
           } else {
-              let currentLetter = this.state.currentSentance[currentIndex].replace('.', '|').replace('?', '+').replace('!', '=').toUpperCase()
+              let currentLetter = this.state.currentSentance[currentIndex]
+                .replace('.', 'DO')
+                .replace('?', 'QM')
+                .replace('!', 'EM')
+                .replace('Å', 'AA')
+                .replace('Ä', 'AE')
+                .replace('Ö', 'OE')
+                .toUpperCase()
 
-              soundClips[currentLetter].playAsync()
+              let soundObject = new Audio.Sound()
+              soundObject.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
+              let source = soundClips[currentLetter]
+              await soundObject.loadAsync(source)
+              await soundObject
+                .playAsync()
+                .catch(error => {
+                  console.log(error)
+                })
           }
       }
     }
@@ -184,36 +219,29 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'space-around',
     alignItems: 'center',
-    height:'100%',
-    margin:'0px',
-    padding:'0px',
-    width:'100%',
   },
 
   h1: {
     fontWeight:'normal',
-    margin:'0px',
-    overflow:'visible',
-    padding:'0px',
+    overflow:'visible'
   },
 
   grid: {
     display: 'flex',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    margin: '0 auto',
     justifyContent: 'center',
-    width: '400px',
+    width: 400,
     maxWidth: '80%'
   },
 
   gridItem: {
     position: 'relative',
-    padding: '30px',
+    padding: 30,
     borderStyle: 'solid',
     borderColor: 'black',
     borderWidth: 2,
-    width: '100px'
+    width: 100
   },
 
   gridItemLetter: {
@@ -224,6 +252,6 @@ const styles = StyleSheet.create({
 
   play: {
     backgroundColor: 'green',
-    padding: '40px'
+    padding: 40
   }
 })
