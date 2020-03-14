@@ -1,15 +1,16 @@
 import React from 'react'
 import { Audio } from 'expo-av'
 import { Button, StyleSheet, Text, TouchableHighlight, View } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Global stuff
+const victoryFactor = 3 // Simple level check for increasing difficulty
 let wordPauseMs     = 500 // Morse code 1 time unit (period)
-let currentIndex    = 0
-let sentances = [
-  "Do you read me over?",
-  "Allmänt anrop",
-  "Hur är vädret där uppe?",
-]
+let difficulty      = 2
+let correctAnswers  = 0
+let inputDisabled   = false
+let soundObject     = new Audio.Sound()
+let loadedSounds    = []
 
 const soundClips = {
 	'A': require('./assets/audio/A_morse_code.mp3'),
@@ -38,9 +39,9 @@ const soundClips = {
 	'X': require('./assets/audio/X_morse_code.mp3'),
 	'Y': require('./assets/audio/Y_morse_code.mp3'),
 	'Z': require('./assets/audio/Z_morse_code.mp3'),
-	'AA': require('./assets/audio/AA_morse_code.mp3'),
-	'AE': require('./assets/audio/AE_morse_code.mp3'),
-	'OE': require('./assets/audio/OE_morse_code.mp3'),
+	'Å': require('./assets/audio/AA_morse_code.mp3'),
+	'Ä': require('./assets/audio/AE_morse_code.mp3'),
+	'Ö': require('./assets/audio/OE_morse_code.mp3'),
 	'0': require('./assets/audio/0_morse_code.mp3'),
 	'1': require('./assets/audio/1_morse_code.mp3'),
 	'2': require('./assets/audio/2_morse_code.mp3'),
@@ -51,15 +52,59 @@ const soundClips = {
 	'7': require('./assets/audio/7_morse_code.mp3'),
 	'8': require('./assets/audio/8_morse_code.mp3'),
 	'9': require('./assets/audio/9_morse_code.mp3'),
-	'EM': require('./assets/audio/EM_morse_code.mp3'),
-	'QM': require('./assets/audio/QM_morse_code.mp3'),
-	'DO': require('./assets/audio/DO_morse_code.mp3')
+	'!': require('./assets/audio/EM_morse_code.mp3'),
+	'?': require('./assets/audio/QM_morse_code.mp3'),
+	'.': require('./assets/audio/DO_morse_code.mp3')
 }
+let alphabet = [
+  'A',
+	'B',
+	'C',
+	'D',
+	'E',
+	'F',
+	'G',
+	'H',
+	'I',
+	'J',
+	'K',
+	'L',
+	'M',
+	'N',
+	'O',
+	'P',
+	'Q',
+	'R',
+	'S',
+	'T',
+	'U',
+	'V',
+	'W',
+	'X',
+	'Y',
+	'Z',
+	'Å',
+	'Ä',
+	'Ö',
+	'0',
+	'1',
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	'!',
+	'?',
+	'.'
+]
 
 interface AppState {
   gridLetters: string[],
-  currentSentance: string,
-  currentClickIndex: number,
+  letters: string[],
+  currentLetter: string,
   points: number,
   gameOver: boolean
 }
@@ -70,38 +115,62 @@ export default class App extends React.Component<{}, AppState> {
     super(props)
     this.state={
       gridLetters:["D", "e", "m", "o"],
-      currentSentance:"Demo",
-      currentClickIndex: 0,
+      letters: [],
+      currentLetter:'',
       points: 0,
       gameOver: false
     }
   }
 
   async componentDidMount() {
-
-    let randomIndex = Math.round(Math.random() * (sentances.length - 1))
-    this.createGridLetters(sentances[randomIndex])
+    this.createGridLetters()
+    // soundObject.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
+    // for (const clip in soundClips) {
+    //   let tmp = new Audio.Sound()
+    //   tmp.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
+    //   tmp.loadAsync(soundClips[clip])
+    //   soundClips[clip] = tmp
+    // }
   }
 
   _onPlaybackStatusUpdate = playbackStatus => {
     if (playbackStatus.isLoaded) {
       if (playbackStatus.didJustFinish) {
         setTimeout(() => {
-          this.playNextLetter()
+          inputDisabled = false
+          let tmp = []
+          for (let i = 0; i < this.state.letters.length; i++) {
+            tmp.push('')
+          }
+          this.setState({ letters: tmp })
         }, wordPauseMs)
       }
     }
   }
 
-  createGridLetters(newSentance) {
+  createGridLetters() {
     let randomLetters = []
-    for (let i = 0; i < newSentance.length; i++) {
-        if (randomLetters.indexOf(newSentance[i].toLowerCase()) == -1) {
-            randomLetters.push(newSentance[i])
-        }
+    // Increase difficulty if accuuracy is 100%
+    if (this.state.points >= difficulty && difficulty < alphabet.length-1) {
+      console.log('Increasing difficulty', 'TODO: Show level up effect')
+      difficulty++
+      this.setState({ points: 0 })
+    }
+    let gridSize = difficulty
+    if (gridSize < 9) {
+      gridSize = 9
+    }
+    let tmpArr = []
+    let hm = []
+    for (let i = 0; i < gridSize; i++) {
+        let randomIndex = Math.floor(Math.random() * difficulty)
+        randomLetters.push(alphabet[randomIndex])
+        tmpArr.push(randomLetters[i].toUpperCase())
+        hm.push('')
     }
 
-    let currentRandomizerIndex = randomLetters.length, tmp
+    let currentRandomizerIndex = randomLetters.length
+    let tmp = ''
     while (0 !== currentRandomizerIndex) {
         let randomIndex = Math.floor(Math.random() * currentRandomizerIndex)
         currentRandomizerIndex -= 1
@@ -111,104 +180,109 @@ export default class App extends React.Component<{}, AppState> {
         randomLetters[randomIndex] = tmp
     }
 
-    let tmpArr = []
-    for (let i = 0; i < randomLetters.length; i++) {
-        tmpArr.push(randomLetters[i].toLowerCase())
-    }
+    let randomIndex = Math.floor(Math.random() * difficulty)
 
     this.setState({
-      currentSentance: newSentance.toLowerCase(),
       gridLetters: tmpArr,
-      currentClickIndex: 0,
-      points: 0,
-      gameOver: false
+      currentLetter: alphabet[randomIndex],
+      letters: hm
     })
   }
 
-  async playNextLetter() {
-    if (this.state.gameOver) {
-      let randomIndex = Math.round(Math.random() * (sentances.length - 1))
-      this.createGridLetters(sentances[randomIndex])
+  async playNewLetter() {
+    if (correctAnswers >= difficulty * victoryFactor) {
+      this.createGridLetters()
+      this.playNewLetter()
     } else {
-      // Go to next letter
-      currentIndex++
-      if (this.state.currentSentance.length-1 >= currentIndex) {
-          // Pause loop when a space is the current letter
-          if (this.state.currentSentance[currentIndex] === ' ') {
-              setTimeout(() => {
-                this.playNextLetter()
-              }, wordPauseMs * 3)
-          } else {
-              let currentLetter = this.state.currentSentance[currentIndex]
-                .replace('.', 'DO')
-                .replace('?', 'QM')
-                .replace('!', 'EM')
-                .replace('Å', 'AA')
-                .replace('Ä', 'AE')
-                .replace('Ö', 'OE')
-                .toUpperCase()
-
-              let soundObject = new Audio.Sound()
-              soundObject.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
-              let source = soundClips[currentLetter]
-              await soundObject.loadAsync(source)
-              await soundObject
-                .playAsync()
-                .catch(error => {
-                  console.log(error)
-                })
-          }
+      // Pause loop when a space is the current letter
+      if (this.state.currentLetter === ' ') {
+          setTimeout(() => {
+          }, wordPauseMs * 3)
+      } else {
+          let soundObject = new Audio.Sound()
+          soundObject.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
+          let source = soundClips[this.state.currentLetter]
+          await soundObject.loadAsync(source)
+          await soundObject.setPositionAsync(0)
+          await soundObject
+            .playAsync()
+            .catch(error => {
+              console.log(error)
+            })
       }
     }
   }
 
-  addPoint(letterIndex) {
-    if (!this.state.gameOver) {
-      if (this.state.currentSentance[this.state.currentClickIndex] == this.state.gridLetters[letterIndex]) {
-        console.log('CORRECT!!')
-        this.setState({ points: this.state.points + 1 })
-      } else if (this.state.points > 0) {
-        console.log('WRONG')
-        this.setState({ points: this.state.points - 1 })
-      }
-      this.setState({ currentClickIndex: this.state.currentClickIndex + 1 })
-      if (this.state.currentClickIndex >= this.state.currentSentance.length-1) {
-        setTimeout(() => {
-          alert('Du fick ' + this.state.points + ' av ' + this.state.currentSentance.length + ' poäng!')
-          this.setState({ gameOver: true })
-        }, 0)
-      }
+  async checkAnswer(clickedIndex) {
+    let clickedLetter = this.state.gridLetters[clickedIndex]
+    // console.log('Checking answer!',this.state.currentLetter,clickedLetter)
+    inputDisabled = true
+    let tmp = this.state.letters
+
+    if (this.state.currentLetter == clickedLetter) {
+      correctAnswers++
+      tmp[clickedIndex] = 'correct'
+      this.setState({
+        points: this.state.points + 1,
+        letters: tmp
+      })
+    } else {
+      correctAnswers = 0
+      tmp[clickedIndex] = 'wrong'
+      this.setState({
+        points: 0,
+        letters: tmp
+      })
     }
+    // Go to next letter
+    let randomIndex = Math.floor(Math.random() * difficulty)
+    while (this.state.gridLetters[alphabet[randomIndex]] == -1) {
+      randomIndex = Math.floor(Math.random() * difficulty)
+    }
+    await this.setState({ currentLetter: alphabet[randomIndex] })
+    console.log('new letter is',randomIndex, alphabet[randomIndex], this.state.currentLetter)
+    this.playNewLetter()
   }
 
   render() {
-    let views = []
-    for (var i = 0; i < this.state.gridLetters.length; i++) {
-
-      views.push(
-        <TouchableHighlight key={"r" + i} onPress={this.addPoint.bind(this, i)}>
-          <View style={styles.gridItem}>
-            <Text style={styles.gridItemLetter}>
-              {this.state.gridLetters[i]}
-            </Text>
-          </View>
-        </TouchableHighlight>
+    let rows = []
+    let loopIndex = 0
+    for (var row = 0; row < this.state.gridLetters.length / 3; row++) {
+      let items = []
+      for (var cell = 0; cell < this.state.gridLetters.length / 3; cell++) {
+        items.push(
+          <TouchableHighlight underlayColor={'blue'} key={'r'+row+':'+cell} onPress={this.checkAnswer.bind(this, loopIndex)} disabled={inputDisabled} style={ (this.state.letters[loopIndex] == 'correct' ? styles.isCorrect : (this.state.letters[loopIndex] == 'wrong' ? styles.isWrong : null)) }>
+            <View style={styles.gridItem}>
+              <Text style={styles.gridItemLetter}>
+                {this.state.gridLetters[loopIndex]}
+              </Text>
+            </View>
+          </TouchableHighlight>
+        )
+        loopIndex++
+      }
+      rows.push(
+        <View style={styles.gridRow} key={'row'+row}>
+          {items}
+        </View>
       )
     }
 
     return (
-      <View style={styles.app}>
+      <LinearGradient
+          colors={['#A7A7A7','#E4E4E4']}
+          style={styles.app}>
           <Text>
-            {'Poäng: ' + this.state.points + ' / ' + this.state.currentSentance.length}
+            {'Rätta svar: ' + this.state.points}
           </Text>
           <View style={styles.grid}>
-            {views}
+            {rows}
           </View>
           <Button
-            onPress={() => {currentIndex = -1;this.playNextLetter()}}
-            title={this.state.gameOver ? "RESTART" : "PLAY"}
+            title="Play Sound"
+            onPress={() => {this.playNewLetter()}}
           />
-      </View>
+      </LinearGradient>
     )
   }
 }
@@ -217,8 +291,9 @@ const styles = StyleSheet.create({
   app: {
     display:'flex',
     flexDirection: 'column',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     alignItems: 'center',
+    height: '100%'
   },
 
   h1: {
@@ -228,26 +303,46 @@ const styles = StyleSheet.create({
 
   grid: {
     display: 'flex',
-    flexDirection: 'row',
+    flexDirection: 'column',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    width: 400,
-    maxWidth: '80%'
+    margin: 30
+  },
+
+  gridRow: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'row'
   },
 
   gridItem: {
     position: 'relative',
-    padding: 30,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderStyle: 'solid',
     borderColor: 'black',
     borderWidth: 2,
-    width: 100
+    width: 80,
+    height: 80,
+    shadowColor: '#000',
+    shadowOpacity: 0.8,
+    shadowRadius: 16
   },
 
   gridItemLetter: {
+    position: 'relative',
     fontSize: 50,
     fontWeight: 'bold',
-    textTransform: 'uppercase',
+    textTransform: 'uppercase'
+  },
+
+  isCorrect: {
+    backgroundColor: 'green'
+  },
+
+  isWrong: {
+    backgroundColor: 'red'
   },
 
   play: {
