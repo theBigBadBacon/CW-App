@@ -2,6 +2,8 @@ import React from 'react'
 import { Audio } from 'expo-av'
 import { Button, StyleSheet, Text, TouchableHighlight, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Font from 'expo-font';
+
 
 // Global stuff
 const victoryFactor = 3 // Simple level check for increasing difficulty
@@ -124,6 +126,10 @@ export default class App extends React.Component<{}, AppState> {
 
   async componentDidMount() {
     this.createGridLetters()
+    Font.loadAsync({
+      'lato-bold': require('./assets/fonts/Lato-Bold.ttf'),
+    });
+
     // soundObject.setOnPlaybackStatusUpdate(this._onPlaybackStatusUpdate)
     // for (const clip in soundClips) {
     //   let tmp = new Audio.Sound()
@@ -251,7 +257,12 @@ export default class App extends React.Component<{}, AppState> {
       let items = []
       for (var cell = 0; cell < this.state.gridLetters.length / 3; cell++) {
         items.push(
-          <TouchableHighlight underlayColor={'blue'} key={'r'+row+':'+cell} onPress={this.checkAnswer.bind(this, loopIndex)} disabled={inputDisabled} style={ (this.state.letters[loopIndex] == 'correct' ? styles.isCorrect : (this.state.letters[loopIndex] == 'wrong' ? styles.isWrong : null)) }>
+          <TouchableHighlight 
+            underlayColor={'#f1f1f1'} 
+            key={'r'+row+':'+cell} 
+            onPress={this.checkAnswer.bind(this, loopIndex)} 
+            disabled={inputDisabled} 
+            style={ (this.state.letters[loopIndex] == 'correct' ? styles.isCorrect : (this.state.letters[loopIndex] == 'wrong' ? styles.isWrong : null)) }>
             <View style={styles.gridItem}>
               <Text style={styles.gridItemLetter}>
                 {this.state.gridLetters[loopIndex]}
@@ -270,16 +281,16 @@ export default class App extends React.Component<{}, AppState> {
 
     return (
       <LinearGradient
-          colors={['#A7A7A7','#E4E4E4']}
+          colors={['#ffffff','#ffffff']}
           style={styles.app}>
           <Text>
-            {'Rätta svar: ' + this.state.points}
+            {'SCORE: ' + this.state.points}
           </Text>
           <View style={styles.grid}>
             {rows}
           </View>
           <Button
-            title="Play Sound"
+            title="LISTEN"
             onPress={() => {this.playNewLetter()}}
           />
       </LinearGradient>
@@ -312,7 +323,7 @@ const styles = StyleSheet.create({
   gridRow: {
     position: 'relative',
     display: 'flex',
-    flexDirection: 'row'
+    flexDirection: 'row',
   },
 
   gridItem: {
@@ -320,29 +331,28 @@ const styles = StyleSheet.create({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    borderStyle: 'solid',
-    borderColor: 'black',
-    borderWidth: 2,
     width: 80,
     height: 80,
-    shadowColor: '#000',
-    shadowOpacity: 0.8,
-    shadowRadius: 16
+    margin: 8,
+    borderBottomWidth: 3,
+    borderColor: '#010101'
   },
 
   gridItemLetter: {
+    fontFamily: 'lato-bold',
     position: 'relative',
     fontSize: 50,
     fontWeight: 'bold',
-    textTransform: 'uppercase'
+    color: '#010101',
+    textTransform: 'uppercase',
   },
 
   isCorrect: {
-    backgroundColor: 'green'
+    backgroundColor: 'aquamarine',
   },
 
   isWrong: {
-    backgroundColor: 'red'
+    backgroundColor: 'tomato',
   },
 
   play: {
