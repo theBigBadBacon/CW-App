@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { Audio } from 'expo-av'
-import { Button, StyleSheet, Text, TouchableHighlight, View } from 'react-native'
+import { Button, StyleSheet, Text, TouchableHighlight, View, Animated, Easing } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Global stuff
@@ -106,7 +106,8 @@ interface AppState {
   letters: string[],
   currentLetter: string,
   points: number,
-  gameOver: boolean
+  gameOver: boolean,
+  levelUp: boolean
 }
 
 export default class App extends React.Component<{}, AppState> {
@@ -118,7 +119,8 @@ export default class App extends React.Component<{}, AppState> {
       letters: [],
       currentLetter:'',
       points: 0,
-      gameOver: false
+      gameOver: false,
+      levelUp: false
     }
   }
 
@@ -154,7 +156,11 @@ export default class App extends React.Component<{}, AppState> {
     if (this.state.points >= difficulty && difficulty < alphabet.length-1) {
       console.log('Increasing difficulty', 'TODO: Show level up effect')
       difficulty++
-      this.setState({ points: 0 })
+      this.setState({ points: 0, levelUp: true })
+      // levelUp state
+      setTimeout(() => {
+        this.setState({ levelUp: false })
+      },0)
     }
     let gridSize = difficulty
     if (gridSize < 9) {
@@ -270,21 +276,61 @@ export default class App extends React.Component<{}, AppState> {
 
     return (
       <LinearGradient
-          colors={['#A7A7A7','#E4E4E4']}
-          style={styles.app}>
+          colors={ ['#A7A7A7', '#E4E4E4'] }
+          style={ styles.app }>
           <Text>
             {'Rätta svar: ' + this.state.points}
           </Text>
-          <View style={styles.grid}>
+          <View style={ styles.grid }>
             {rows}
           </View>
           <Button
             title="Play Sound"
             onPress={() => {this.playNewLetter()}}
           />
+          <Effect style={ styles.effect } active={ this.state.levelUp }>
+            <Text style={ styles.effectLabel }>LEVEL UP!</Text>
+          </Effect>
       </LinearGradient>
     )
   }
+}
+
+const Effect = (props) => {
+  const effectAnim = useRef(new Animated.Value(0)).current
+
+  effectAnim.addListener((state) => {
+    if (state.value >= 1) {
+      // Reset animation position
+      effectAnim.setValue(0)
+    }
+  })
+  const anim = Animated.timing(
+    effectAnim,
+    {
+      toValue: 1,
+      delay: props.delay,
+      easing: Easing.bezier(0, 1, 1, 0),
+      duration: 1000
+    }
+  )
+  if (props.active) {
+    anim.start()
+  }
+
+  return (
+    <Animated.View
+      style={{
+        ...props.style,
+        bottom: effectAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['-100%', '100%']
+        })
+      }}
+    >
+      { props.children }
+    </Animated.View>
+  )
 }
 
 const styles = StyleSheet.create({
@@ -293,7 +339,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%'
+    height: '100%',
+    overflow: 'hidden'
   },
 
   h1: {
@@ -348,5 +395,24 @@ const styles = StyleSheet.create({
   play: {
     backgroundColor: 'green',
     padding: 40
+  },
+
+  effect: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: '100%',
+    textAlign: 'center',
+    textAlignVertical: 'center'
+  },
+  effectLabel: {
+    color: '#FFE',
+    fontFamily: 'monospace',
+    fontSize: 60,
+    textShadowColor: '#EE2',
+    textShadowRadius: 4
   }
 })
